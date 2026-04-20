@@ -476,7 +476,7 @@
                     <h1 class="clients-title">👥 Gestão de Clientes</h1>
                     <p class="clients-subtitle">Cadastre e gerencie sua base de clientes</p>
                 </div>
-                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+                <a href="main.html" class="back-btn">← Voltar ao Início</a>
             </div>
         </div>
 
@@ -628,15 +628,9 @@
         let clients = [];
         let currentUser = null;
 
-        // Verificar autenticação
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (!savedUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            currentUser = JSON.parse(savedUser);
+            // Sistema pronto para uso sem necessidade de login
             loadClients();
         });
 

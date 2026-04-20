@@ -497,7 +497,7 @@
                     <h1 class="suppliers-title">🏭 Gestão de Fornecedores</h1>
                     <p class="suppliers-subtitle">Cadastre e gerencie seus parceiros comerciais</p>
                 </div>
-                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+                <a href="main.html" class="back-btn">← Voltar ao Início</a>
             </div>
         </div>
 
@@ -650,15 +650,9 @@
         let suppliers = [];
         let currentUser = null;
 
-        // Verificar autenticação
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (!savedUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            currentUser = JSON.parse(savedUser);
+            // Sistema pronto para uso sem necessidade de login
             loadSuppliers();
         });
 

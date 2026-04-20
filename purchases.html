@@ -446,7 +446,7 @@
                     <h1 class="purchases-title">💰 Registro de Compras</h1>
                     <p class="purchases-subtitle">Controle suas aquisições e atualize o estoque</p>
                 </div>
-                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+                <a href="main.html" class="back-btn">← Voltar ao Início</a>
             </div>
         </div>
 
@@ -616,20 +616,9 @@
         let suppliers = [];
         let currentUser = null;
 
-        // Verificar autenticação
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (!savedUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            currentUser = JSON.parse(savedUser);
-            
-            // Definir data atual
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('purchase-date').value = today;
-            
+            // Sistema pronto para uso sem necessidade de login
             loadData();
         });
 

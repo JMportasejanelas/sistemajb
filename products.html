@@ -491,7 +491,7 @@
                     <h1 class="products-title">📦 Gestão de Produtos</h1>
                     <p class="products-subtitle">Cadastre e gerencie seu estoque</p>
                 </div>
-                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+                <a href="main.html" class="back-btn">← Voltar ao Início</a>
             </div>
         </div>
 
@@ -662,15 +662,9 @@
         let products = [];
         let currentUser = null;
 
-        // Verificar autenticação
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (!savedUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            currentUser = JSON.parse(savedUser);
+            // Sistema pronto para uso sem necessidade de login
             loadProducts();
         });
 

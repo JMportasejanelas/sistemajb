@@ -285,8 +285,7 @@
     </style>
 </head>
 <body>
-    <a href="login.html" class="logout-btn">🚪 Sair</a>
-
+    
     <div class="main-container">
         <!-- Header -->
         <div class="header">
@@ -297,8 +296,8 @@
             <div class="user-info">
                 <div class="user-avatar">👤</div>
                 <div class="user-details">
-                    <div class="user-name" id="user-name">Juan</div>
-                    <div class="user-role">Administrador</div>
+                    <div class="user-name">Administrador</div>
+                    <div class="user-role">Sistema Online</div>
                 </div>
             </div>
         </div>
@@ -372,16 +371,10 @@
 
         let currentUser = null;
 
-        // Verificar autenticação
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (!savedUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            currentUser = JSON.parse(savedUser);
-            document.getElementById('user-name').textContent = currentUser.name;
+            // Sistema pronto para uso sem necessidade de login
+            console.log('Sistema de Gestão Empresarial inicializado');
         });
 
         // Adicionar efeitos de hover nos cards

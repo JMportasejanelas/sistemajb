@@ -564,17 +564,9 @@
         let purchases = [];
         let currentUser = null;
 
-        // Verificar autenticação
+        // Inicialização do sistema
         document.addEventListener('DOMContentLoaded', function() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (!savedUser) {
-                window.location.href = 'login.html';
-                return;
-            }
-            
-            currentUser = JSON.parse(savedUser);
-            document.getElementById('user-name').textContent = currentUser.name;
-            
+            // Sistema pronto para uso sem necessidade de login
             loadData();
         });
 
