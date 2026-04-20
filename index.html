@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão Empresarial</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <h1>🏢 Sistema de Gestão</h1>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Usuário:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Entrar</button>
+                </form>
+                <div id="login-error" class="error-message hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sistema Principal -->
+    <div id="main-system" class="screen">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🏢 Sistema de Gestão Empresarial</h1>
+            </div>
+            <div class="header-right">
+                <span id="user-info">Usuário: juan</span>
+                <button onclick="logout()" class="btn-secondary">Sair</button>
+            </div>
+        </header>
+
+        <!-- Menu Lateral -->
+        <nav class="sidebar">
+            <ul class="menu">
+                <li><a href="#" onclick="showModule('dashboard')" class="menu-item active">📊 Dashboard</a></li>
+                <li><a href="#" onclick="showModule('products')" class="menu-item">📦 Produtos</a></li>
+                <li><a href="#" onclick="showModule('clients')" class="menu-item">👥 Clientes</a></li>
+                <li><a href="#" onclick="showModule('suppliers')" class="menu-item">🏭 Fornecedores</a></li>
+                <li><a href="#" onclick="showModule('purchases')" class="menu-item">💰 Compras</a></li>
+                <li><a href="#" onclick="showModule('costs')" class="menu-item">📈 Custos</a></li>
+                <li><a href="#" onclick="showModule('pricing')" class="menu-item">💵 Precificação</a></li>
+            </ul>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Dashboard -->
+            <div id="dashboard" class="module active">
+                <h2>Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>📦 Produtos</h3>
+                        <div class="metric" id="total-products">0</div>
+                        <p>Total cadastrados</p>
+                    </div>
+                    <div class="card">
+                        <h3>👥 Clientes</h3>
+                        <div class="metric" id="total-clients">0</div>
+                        <p>Total cadastrados</p>
+                    </div>
+                    <div class="card">
+                        <h3>🏭 Fornecedores</h3>
+                        <div class="metric" id="total-suppliers">0</div>
+                        <p>Total cadastrados</p>
+                    </div>
+                    <div class="card">
+                        <h3>💰 Compras</h3>
+                        <div class="metric" id="total-purchases">0</div>
+                        <p>Total registradas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Produtos -->
+            <div id="products" class="module">
+                <h2>Cadastro de Produtos</h2>
+                <div class="module-content">
+                    <div class="form-section">
+                        <h3>Novo Produto</h3>
+                        <form id="product-form" onsubmit="saveProduct(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-name">Nome do Produto:</label>
+                                    <input type="text" id="product-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product-code">Código:</label>
+                                    <input type="text" id="product-code" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-category">Categoria:</label>
+                                    <select id="product-category" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="eletronicos">Eletrônicos</option>
+                                        <option value="vestuario">Vestuário</option>
+                                        <option value="alimentos">Alimentos</option>
+                                        <option value="outros">Outros</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product-stock">Estoque:</label>
+                                    <input type="number" id="product-stock" min="0" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-min-stock">Estoque Mínimo:</label>
+                                    <input type="number" id="product-min-stock" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product-price">Preço de Venda:</label>
+                                    <input type="number" id="product-price" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Cadastrar Produto</button>
+                        </form>
+                    </div>
+                    <div class="list-section">
+                        <h3>Produtos Cadastrados</h3>
+                        <div class="search-bar">
+                            <input type="text" id="product-search" placeholder="Buscar produto..." onkeyup="searchProducts()">
+                        </div>
+                        <div class="table-container">
+                            <table id="products-table">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nome</th>
+                                        <th>Categoria</th>
+                                        <th>Estoque</th>
+                                        <th>Estoque Mín</th>
+                                        <th>Preço</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Clientes -->
+            <div id="clients" class="module">
+                <h2>Cadastro de Clientes</h2>
+                <div class="module-content">
+                    <div class="form-section">
+                        <h3>Novo Cliente</h3>
+                        <form id="client-form" onsubmit="saveClient(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-name">Nome:</label>
+                                    <input type="text" id="client-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-cpf">CPF/CNPJ:</label>
+                                    <input type="text" id="client-cpf" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-email">E-mail:</label>
+                                    <input type="email" id="client-email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-phone">Telefone:</label>
+                                    <input type="tel" id="client-phone" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="client-address">Endereço:</label>
+                                    <input type="text" id="client-address" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="client-city">Cidade:</label>
+                                    <input type="text" id="client-city" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Cadastrar Cliente</button>
+                        </form>
+                    </div>
+                    <div class="list-section">
+                        <h3>Clientes Cadastrados</h3>
+                        <div class="search-bar">
+                            <input type="text" id="client-search" placeholder="Buscar cliente..." onkeyup="searchClients()">
+                        </div>
+                        <div class="table-container">
+                            <table id="clients-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>CPF/CNPJ</th>
+                                        <th>E-mail</th>
+                                        <th>Telefone</th>
+                                        <th>Cidade</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clients-list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Fornecedores -->
+            <div id="suppliers" class="module">
+                <h2>Cadastro de Fornecedores</h2>
+                <div class="module-content">
+                    <div class="form-section">
+                        <h3>Novo Fornecedor</h3>
+                        <form id="supplier-form" onsubmit="saveSupplier(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="supplier-name">Nome da Empresa:</label>
+                                    <input type="text" id="supplier-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="supplier-cnpj">CNPJ:</label>
+                                    <input type="text" id="supplier-cnpj" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="supplier-email">E-mail:</label>
+                                    <input type="email" id="supplier-email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="supplier-phone">Telefone:</label>
+                                    <input type="tel" id="supplier-phone" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="supplier-address">Endereço:</label>
+                                    <input type="text" id="supplier-address" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="supplier-category">Categoria:</label>
+                                    <select id="supplier-category" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="eletronicos">Eletrônicos</option>
+                                        <option value="vestuario">Vestuário</option>
+                                        <option value="alimentos">Alimentos</option>
+                                        <option value="outros">Outros</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Cadastrar Fornecedor</button>
+                        </form>
+                    </div>
+                    <div class="list-section">
+                        <h3>Fornecedores Cadastrados</h3>
+                        <div class="search-bar">
+                            <input type="text" id="supplier-search" placeholder="Buscar fornecedor..." onkeyup="searchSuppliers()">
+                        </div>
+                        <div class="table-container">
+                            <table id="suppliers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>CNPJ</th>
+                                        <th>E-mail</th>
+                                        <th>Telefone</th>
+                                        <th>Categoria</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="suppliers-list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Compras -->
+            <div id="purchases" class="module">
+                <h2>Registro de Compras</h2>
+                <div class="module-content">
+                    <div class="form-section">
+                        <h3>Nova Compra</h3>
+                        <form id="purchase-form" onsubmit="savePurchase(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-date">Data:</label>
+                                    <input type="date" id="purchase-date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-supplier">Fornecedor:</label>
+                                    <select id="purchase-supplier" required>
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-product">Produto:</label>
+                                    <select id="purchase-product" onchange="updatePurchasePrice()" required>
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-quantity">Quantidade:</label>
+                                    <input type="number" id="purchase-quantity" min="1" onchange="updatePurchaseTotal()" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="purchase-unit-price">Preço Unitário:</label>
+                                    <input type="number" id="purchase-unit-price" step="0.01" min="0" onchange="updatePurchaseTotal()" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="purchase-total">Total:</label>
+                                    <input type="number" id="purchase-total" step="0.01" min="0" readonly>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Registrar Compra</button>
+                        </form>
+                    </div>
+                    <div class="list-section">
+                        <h3>Histórico de Compras</h3>
+                        <div class="search-bar">
+                            <input type="text" id="purchase-search" placeholder="Buscar compra..." onkeyup="searchPurchases()">
+                        </div>
+                        <div class="table-container">
+                            <table id="purchases-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Fornecedor</th>
+                                        <th>Produto</th>
+                                        <th>Quantidade</th>
+                                        <th>Preço Unit.</th>
+                                        <th>Total</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchases-list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Custos -->
+            <div id="costs" class="module">
+                <h2>Tabela de Custos</h2>
+                <div class="module-content">
+                    <div class="cost-summary">
+                        <div class="card">
+                            <h3>Custo Total</h3>
+                            <div class="metric" id="total-cost">R$ 0,00</div>
+                        </div>
+                        <div class="card">
+                            <h3>Última Atualização</h3>
+                            <div class="metric" id="last-update">-</div>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="costs-table">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Última Compra</th>
+                                    <th>Preço Unit.</th>
+                                    <th>Custo Médio</th>
+                                    <th>Estoque Atual</th>
+                                    <th>Custo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="costs-list">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Módulo de Precificação -->
+            <div id="pricing" class="module">
+                <h2>Precificação</h2>
+                <div class="module-content">
+                    <div class="form-section">
+                        <h3>Configurar Margem de Lucro</h3>
+                        <form id="pricing-form" onsubmit="updatePricing(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="margin-percentage">Margem de Lucro (%):</label>
+                                    <input type="number" id="margin-percentage" step="0.1" min="0" max="100" value="30" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fixed-cost">Custo Fixo (%):</label>
+                                    <input type="number" id="fixed-cost" step="0.1" min="0" max="100" value="10" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary">Atualizar Preços</button>
+                        </form>
+                    </div>
+                    <div class="list-section">
+                        <h3>Tabela de Preços Sugeridos</h3>
+                        <div class="table-container">
+                            <table id="pricing-table">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Custo Unit.</th>
+                                        <th>Margem (%)</th>
+                                        <th>Preço Sugerido</th>
+                                        <th>Preço Atual</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pricing-list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

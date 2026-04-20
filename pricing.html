@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precificação - Sistema de Gestão Empresarial</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        .pricing-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-header::before {
+            content: '';
+            position: absolute;
+            top: -45px;
+            right: -45px;
+            width: 160px;
+            height: 160px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 14s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(20deg); }
+        }
+
+        .pricing-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pricing-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .pricing-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .pricing-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .pricing-config-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .form-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #34495e;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-suffix {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #95a5a6;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-title {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-text {
+            color: #6c757d;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .formula {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+            text-align: center;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .pricing-table-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .table-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .product-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .pricing-table thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .pricing-table th {
+            padding: 18px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .pricing-table td {
+            padding: 18px 16px;
+            border-bottom: 1px solid #f1f3f4;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .pricing-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .pricing-table tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .cost-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .margin-value {
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .suggested-price {
+            font-weight: 700;
+            color: #27ae60;
+            font-size: 15px;
+        }
+
+        .current-price {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-ok {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .status-low {
+            background: rgba(241, 196, 15, 0.1);
+            color: #f39c12;
+        }
+
+        .status-high {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-update,
+        .btn-edit {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-update {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #95a5a6;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+
+        @media (max-width: 1200px) {
+            .pricing-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-config-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .pricing-layout {
+                gap: 20px;
+            }
+
+            .pricing-table {
+                font-size: 12px;
+            }
+
+            .pricing-table th,
+            .pricing-table td {
+                padding: 12px 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .pricing-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="pricing-header">
+            <div class="pricing-content">
+                <div>
+                    <h1 class="pricing-title">💵 Precificação Inteligente</h1>
+                    <p class="pricing-subtitle">Defina preços ideais com base nos custos e margens</p>
+                </div>
+                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="total-products">0</div>
+                <div class="stat-label">Produtos Analisados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avg-margin">0%</div>
+                <div class="stat-label">Margem Média</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="underpriced">0</div>
+                <div class="stat-label">Preços Baixos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="overpriced">0</div>
+                <div class="stat-label">Preços Altos</div>
+            </div>
+        </div>
+
+        <!-- Layout Principal -->
+        <div class="pricing-layout">
+            <!-- Configuração de Precificação -->
+            <div class="pricing-config-card">
+                <div class="form-header">
+                    <div class="form-icon">⚙️</div>
+                    <h2 class="form-title">Configurações</h2>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title">
+                        <span>💡</span>
+                        <span>Como funciona a precificação</span>
+                    </div>
+                    <div class="info-text">
+                        O sistema calcula o preço sugerido com base no custo médio do produto, adicionando a margem de lucro e os custos fixos percentuais.
+                    </div>
+                    <div class="formula">
+                        Preço Sugerido = Custo Médio × (1 + Margem%) × (1 + Custo Fixo%)
+                    </div>
+                </div>
+
+                <form id="pricing-form" onsubmit="updatePricing(event)">
+                    <div class="form-group">
+                        <label for="margin-percentage">Margem de Lucro</label>
+                        <div class="input-group">
+                            <input 
+                                type="number" 
+                                id="margin-percentage" 
+                                min="0" 
+                                max="200" 
+                                step="0.1" 
+                                value="30"
+                                required
+                            >
+                            <span class="input-suffix">%</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fixed-cost">Custo Fixo Percentual</label>
+                        <div class="input-group">
+                            <input 
+                                type="number" 
+                                id="fixed-cost" 
+                                min="0" 
+                                max="100" 
+                                step="0.1" 
+                                value="10"
+                                required
+                            >
+                            <span class="input-suffix">%</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        🔄 Recalcular Preços
+                    </button>
+                </form>
+
+                <div class="info-box" style="margin-top: 24px;">
+                    <div class="info-title">
+                        <span>📊</span>
+                        <span>Legenda de Status</span>
+                    </div>
+                    <div class="info-text">
+                        <p><span class="status-badge status-ok">✅ OK</span> Preço adequado</p>
+                        <p><span class="status-badge status-low">⚠️ Baixo</span> Preço abaixo do sugerido</p>
+                        <p><span class="status-badge status-high">📈 Alto</span> Preço acima do sugerido</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de Precificação -->
+            <div class="pricing-table-card">
+                <div class="table-header">
+                    <h2 class="table-title">📋 Análise de Preços</h2>
+                    <span class="product-count" id="product-count">0 produtos</span>
+                </div>
+
+                <div class="table-container">
+                    <table class="pricing-table">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Custo Médio</th>
+                                <th>Margem</th>
+                                <th>Preço Sugerido</th>
+                                <th>Preço Atual</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pricing-list">
+                            <!-- Produtos serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">💵</div>
+                    <div class="empty-state-title">Nenhum produto para analisar</div>
+                    <div class="empty-state-text">Cadastre produtos e registre compras para começar a análise de preços.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqeue_aAKObAABUpG0pP_0hj1qJQecElQ",
+            authDomain: "sistemajb-909c1.firebaseapp.com",
+            databaseURL: "https://sistemajb-909c1-default-rtdb.firebaseio.com",
+            projectId: "sistemajb-909c1",
+            storageBucket: "sistemajb-909c1.firebasestorage.app",
+            messagingSenderId: "74845488953",
+            appId: "1:74845488953:web:2b5bf6e044ea4bf014cae8",
+            measurementId: "G-S304J5H84J"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let products = [];
+        let purchases = [];
+        let currentUser = null;
+
+        // Verificar autenticação
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(savedUser);
+            loadPricing();
+        });
+
+        function loadPricing() {
+            // Carregar dados do Firebase
+            Promise.all([
+                database.ref('products').once('value'),
+                database.ref('purchases').once('value')
+            ]).then(([productsSnapshot, purchasesSnapshot]) => {
+                products = productsSnapshot.val() || [];
+                purchases = purchasesSnapshot.val() || [];
+                
+                displayPricing();
+                updateStats();
+            });
+        }
+
+        function displayPricing() {
+            const tbody = document.getElementById('pricing-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (products.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            tbody.innerHTML = '';
+            
+            const marginPercentage = parseFloat(document.getElementById('margin-percentage').value) || 30;
+            const fixedCost = parseFloat(document.getElementById('fixed-cost').value) || 10;
+            
+            products.forEach((product, index) => {
+                const productPurchases = purchases.filter(p => p.product === product.name);
+                let averageCost = 0;
+                
+                if (productPurchases.length > 0) {
+                    const totalQuantity = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
+                    const totalValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+                    averageCost = totalValue / totalQuantity;
+                }
+                
+                const suggestedPrice = averageCost * (1 + marginPercentage / 100) * (1 + fixedCost / 100);
+                const currentPrice = parseFloat(product.price) || 0;
+                
+                let status = 'ok';
+                let statusClass = 'status-ok';
+                let statusText = '✅ OK';
+                
+                if (suggestedPrice > currentPrice * 1.05) {
+                    status = 'low';
+                    statusClass = 'status-low';
+                    statusText = '⚠️ Baixo';
+                } else if (suggestedPrice < currentPrice * 0.95) {
+                    status = 'high';
+                    statusClass = 'status-high';
+                    statusText = '📈 Alto';
+                }
+                
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><span class="product-name">${product.name}</span></td>
+                    <td><span class="cost-value">R$ ${averageCost.toFixed(2)}</span></td>
+                    <td><span class="margin-value">${marginPercentage}%</span></td>
+                    <td><span class="suggested-price">R$ ${suggestedPrice.toFixed(2)}</span></td>
+                    <td><span class="current-price">R$ ${currentPrice.toFixed(2)}</span></td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-update" onclick="updateProductPrice('${product.name}', ${suggestedPrice})">Atualizar</button>
+                            <button class="btn-edit" onclick="editProductPrice(${index})">Editar</button>
+                        </div>
+                    </td>
+                `;
+            });
+            
+            document.getElementById('product-count').textContent = `${products.length} produto${products.length !== 1 ? 's' : ''}`;
+        }
+
+        function updatePricing(event) {
+            event.preventDefault();
+            displayPricing();
+            updateStats();
+            showNotification('Tabela de preços atualizada com sucesso!');
+        }
+
+        function updateProductPrice(productName, newPrice) {
+            const productIndex = products.findIndex(p => p.name === productName);
+            if (productIndex !== -1) {
+                products[productIndex].price = newPrice;
+                saveToFirebase();
+                displayPricing();
+                updateStats();
+                showNotification(`Preço do produto "${productName}" atualizado para R$ ${newPrice.toFixed(2)}!`);
+            }
+        }
+
+        function editProductPrice(index) {
+            const product = products[index];
+            const newPrice = prompt(`Digite o novo preço para "${product.name}":`, product.price);
+            
+            if (newPrice !== null && !isNaN(newPrice) && parseFloat(newPrice) > 0) {
+                products[index].price = parseFloat(newPrice);
+                saveToFirebase();
+                displayPricing();
+                updateStats();
+                showNotification(`Preço do produto "${product.name}" atualizado!`);
+            }
+        }
+
+        function updateStats() {
+            const marginPercentage = parseFloat(document.getElementById('margin-percentage').value) || 30;
+            let underpriced = 0;
+            let overpriced = 0;
+            let totalMargin = 0;
+            let productsWithCost = 0;
+            
+            products.forEach(product => {
+                const productPurchases = purchases.filter(p => p.product === product.name);
+                let averageCost = 0;
+                
+                if (productPurchases.length > 0) {
+                    const totalQuantity = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
+                    const totalValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+                    averageCost = totalValue / totalQuantity;
+                    
+                    const suggestedPrice = averageCost * (1 + marginPercentage / 100) * 1.1; // 10% custo fixo
+                    const currentPrice = parseFloat(product.price) || 0;
+                    
+                    if (suggestedPrice > currentPrice * 1.05) {
+                        underpriced++;
+                    } else if (suggestedPrice < currentPrice * 0.95) {
+                        overpriced++;
+                    }
+                    
+                    const actualMargin = ((currentPrice - averageCost) / averageCost) * 100;
+                    totalMargin += actualMargin;
+                    productsWithCost++;
+                }
+            });
+            
+            const avgMargin = productsWithCost > 0 ? totalMargin / productsWithCost : 0;
+            
+            document.getElementById('total-products').textContent = products.length;
+            document.getElementById('avg-margin').textContent = avgMargin.toFixed(1) + '%';
+            document.getElementById('underpriced').textContent = underpriced;
+            document.getElementById('overpriced').textContent = overpriced;
+        }
+
+        function saveToFirebase() {
+            database.ref('products').set(products);
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(39, 174, 96, 0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Adicionar animações CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

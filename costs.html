@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custos - Sistema de Gestão Empresarial</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        .costs-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .costs-header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 12s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(15deg); }
+        }
+
+        .costs-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .costs-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .costs-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .cost-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .summary-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .summary-label {
+            color: #7f8c8d;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .costs-table-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .table-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .update-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .costs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .costs-table thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .costs-table th {
+            padding: 18px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .costs-table td {
+            padding: 18px 16px;
+            border-bottom: 1px solid #f1f3f4;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .costs-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .costs-table tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .cost-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stock-value {
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .total-cost {
+            font-weight: 700;
+            color: #27ae60;
+            font-size: 16px;
+        }
+
+        .cost-chart {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            margin-top: 32px;
+        }
+
+        .chart-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .chart-bar {
+            width: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .chart-bar:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #495057;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .chart-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #95a5a6;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+
+        .cost-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .trend-up {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .trend-down {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .trend-stable {
+            background: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .cost-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .costs-table {
+                font-size: 12px;
+            }
+
+            .costs-table th,
+            .costs-table td {
+                padding: 12px 8px;
+            }
+
+            .chart-container {
+                padding: 10px;
+            }
+
+            .chart-bar {
+                width: 40px;
+            }
+
+            .costs-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="costs-header">
+            <div class="costs-content">
+                <div>
+                    <h1 class="costs-title">📈 Análise de Custos</h1>
+                    <p class="costs-subtitle">Visualize e analise os custos do seu estoque</p>
+                </div>
+                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Resumo de Custos -->
+        <div class="cost-summary">
+            <div class="summary-card">
+                <div class="summary-icon">💰</div>
+                <div class="summary-value" id="total-cost">R$ 0,00</div>
+                <div class="summary-label">Custo Total do Estoque</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon">📊</div>
+                <div class="summary-value" id="avg-cost">R$ 0,00</div>
+                <div class="summary-label">Custo Médio por Produto</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon">📦</div>
+                <div class="summary-value" id="total-items">0</div>
+                <div class="summary-label">Itens em Estoque</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon">🏷️</div>
+                <div class="summary-value" id="products-count">0</div>
+                <div class="summary-label">Produtos Analisados</div>
+            </div>
+        </div>
+
+        <!-- Tabela de Custos -->
+        <div class="costs-table-card">
+            <div class="table-header">
+                <h2 class="table-title">📋 Detalhamento de Custos por Produto</h2>
+                <div class="update-info">
+                    <span id="last-update">Atualizado agora</span>
+                    <button class="refresh-btn" onclick="loadCosts()">🔄 Atualizar</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="costs-table">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Último Preço</th>
+                            <th>Custo Médio</th>
+                            <th>Estoque</th>
+                            <th>Custo Total</th>
+                            <th>Tendência</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costs-list">
+                        <!-- Custos serão carregados aqui -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📈</div>
+                <div class="empty-state-title">Nenhum custo registrado</div>
+                <div class="empty-state-text">Registre algumas compras para visualizar os custos dos produtos.</div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Custos -->
+        <div class="cost-chart">
+            <h2 class="chart-title">📊 Top 10 Produtos por Custo</h2>
+            <div class="chart-container" id="cost-chart">
+                <!-- Gráfico será gerado aqui -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqeue_aAKObAABUpG0pP_0hj1qJQecElQ",
+            authDomain: "sistemajb-909c1.firebaseapp.com",
+            databaseURL: "https://sistemajb-909c1-default-rtdb.firebaseio.com",
+            projectId: "sistemajb-909c1",
+            storageBucket: "sistemajb-909c1.firebasestorage.app",
+            messagingSenderId: "74845488953",
+            appId: "1:74845488953:web:2b5bf6e044ea4bf014cae8",
+            measurementId: "G-S304J5H84J"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let products = [];
+        let purchases = [];
+        let currentUser = null;
+
+        // Verificar autenticação
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(savedUser);
+            loadCosts();
+        });
+
+        function loadCosts() {
+            // Carregar dados do Firebase
+            Promise.all([
+                database.ref('products').once('value'),
+                database.ref('purchases').once('value')
+            ]).then(([productsSnapshot, purchasesSnapshot]) => {
+                products = productsSnapshot.val() || [];
+                purchases = purchasesSnapshot.val() || [];
+                
+                displayCosts();
+                updateSummary();
+                generateChart();
+                
+                // Atualizar timestamp
+                document.getElementById('last-update').textContent = 
+                    'Atualizado em ' + new Date().toLocaleString('pt-BR');
+            });
+        }
+
+        function displayCosts() {
+            const tbody = document.getElementById('costs-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (products.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            tbody.innerHTML = '';
+            
+            // Calcular custos para cada produto
+            const productCosts = products.map(product => {
+                const productPurchases = purchases.filter(p => p.product === product.name);
+                
+                let lastPurchasePrice = 0;
+                let averageCost = 0;
+                let trend = 'stable';
+                
+                if (productPurchases.length > 0) {
+                    // Último preço de compra
+                    lastPurchasePrice = productPurchases[productPurchases.length - 1].unitPrice;
+                    
+                    // Custo médio
+                    const totalQuantity = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
+                    const totalValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+                    averageCost = totalValue / totalQuantity;
+                    
+                    // Tendência (compara últimos dois preços)
+                    if (productPurchases.length >= 2) {
+                        const lastPrice = productPurchases[productPurchases.length - 1].unitPrice;
+                        const prevPrice = productPurchases[productPurchases.length - 2].unitPrice;
+                        if (lastPrice > prevPrice) trend = 'up';
+                        else if (lastPrice < prevPrice) trend = 'down';
+                    }
+                }
+                
+                const totalProductCost = averageCost * product.stock;
+                
+                return {
+                    ...product,
+                    lastPurchasePrice,
+                    averageCost,
+                    totalProductCost,
+                    trend
+                };
+            });
+            
+            // Ordenar por custo total (maior para menor)
+            productCosts.sort((a, b) => b.totalProductCost - a.totalProductCost);
+            
+            productCosts.forEach(product => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><span class="product-name">${product.name}</span></td>
+                    <td><span class="cost-value">R$ ${product.lastPurchasePrice.toFixed(2)}</span></td>
+                    <td><span class="cost-value">R$ ${product.averageCost.toFixed(2)}</span></td>
+                    <td><span class="stock-value">${product.stock}</span></td>
+                    <td><span class="total-cost">R$ ${product.totalProductCost.toFixed(2)}</span></td>
+                    <td>${getTrendBadge(product.trend)}</td>
+                `;
+            });
+        }
+
+        function updateSummary() {
+            let totalCost = 0;
+            let totalItems = 0;
+            
+            products.forEach(product => {
+                const productPurchases = purchases.filter(p => p.product === product.name);
+                if (productPurchases.length > 0) {
+                    const totalQuantity = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
+                    const totalValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+                    const averageCost = totalValue / totalQuantity;
+                    totalCost += averageCost * product.stock;
+                }
+                totalItems += product.stock;
+            });
+            
+            const avgCost = products.length > 0 ? totalCost / products.length : 0;
+            
+            document.getElementById('total-cost').textContent = formatCurrency(totalCost);
+            document.getElementById('avg-cost').textContent = formatCurrency(avgCost);
+            document.getElementById('total-items').textContent = totalItems.toLocaleString('pt-BR');
+            document.getElementById('products-count').textContent = products.length;
+        }
+
+        function generateChart() {
+            const chartContainer = document.getElementById('cost-chart');
+            
+            if (products.length === 0) {
+                chartContainer.innerHTML = '<div class="empty-state">Nenhum dado para exibir</div>';
+                return;
+            }
+            
+            // Calcular custos e pegar top 10
+            const productCosts = products.map(product => {
+                const productPurchases = purchases.filter(p => p.product === product.name);
+                let averageCost = 0;
+                
+                if (productPurchases.length > 0) {
+                    const totalQuantity = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
+                    const totalValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+                    averageCost = totalValue / totalQuantity;
+                }
+                
+                return {
+                    name: product.name,
+                    totalCost: averageCost * product.stock
+                };
+            });
+            
+            productCosts.sort((a, b) => b.totalCost - a.totalCost);
+            const top10 = productCosts.slice(0, 10);
+            
+            if (top10.length === 0) {
+                chartContainer.innerHTML = '<div class="empty-state">Nenhum custo calculado</div>';
+                return;
+            }
+            
+            const maxCost = Math.max(...top10.map(p => p.totalCost));
+            
+            chartContainer.innerHTML = '';
+            
+            top10.forEach(product => {
+                const barHeight = (product.totalCost / maxCost) * 250;
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = barHeight + 'px';
+                bar.innerHTML = `
+                    <div class="chart-value">R$ ${product.totalCost.toFixed(0)}</div>
+                    <div class="chart-label">${product.name.length > 12 ? product.name.substring(0, 12) + '...' : product.name}</div>
+                `;
+                chartContainer.appendChild(bar);
+            });
+        }
+
+        function getTrendBadge(trend) {
+            const badges = {
+                'up': '<span class="cost-trend trend-up">↑ Alta</span>',
+                'down': '<span class="cost-trend trend-down">↓ Baixa</span>',
+                'stable': '<span class="cost-trend trend-stable">→ Estável</span>'
+            };
+            return badges[trend] || badges['stable'];
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        // Auto-atualizar a cada 30 segundos
+        setInterval(loadCosts, 30000);
+    </script>
+</body>
+</html>

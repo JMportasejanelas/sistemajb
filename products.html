@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - Sistema de Gestão Empresarial</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        .products-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .products-header::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .products-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .products-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .products-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .products-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .product-form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .form-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #34495e;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .products-list-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .list-title {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .product-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #95a5a6;
+            font-size: 18px;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .products-table thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .products-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .products-table td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f3f4;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .products-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .products-table tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .product-code {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .product-name {
+            font-weight: 500;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .category-eletronicos {
+            background: rgba(52, 152, 219, 0.1);
+            color: #2980b9;
+        }
+
+        .category-vestuario {
+            background: rgba(155, 89, 182, 0.1);
+            color: #8e44ad;
+        }
+
+        .category-alimentos {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .category-outros {
+            background: rgba(241, 196, 15, 0.1);
+            color: #f39c12;
+        }
+
+        .stock-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .stock-high {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .stock-medium {
+            background: rgba(241, 196, 15, 0.1);
+            color: #f39c12;
+        }
+
+        .stock-low {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .price-display {
+            font-weight: 600;
+            color: #27ae60;
+            font-size: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #95a5a6;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 1200px) {
+            .products-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .product-form-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .products-layout {
+                gap: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .products-table {
+                font-size: 12px;
+            }
+
+            .products-table th,
+            .products-table td {
+                padding: 12px 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="products-header">
+            <div class="products-content">
+                <div>
+                    <h1 class="products-title">📦 Gestão de Produtos</h1>
+                    <p class="products-subtitle">Cadastre e gerencie seu estoque</p>
+                </div>
+                <a href="dashboard.html" class="back-btn">← Voltar ao Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="total-products">0</div>
+                <div class="stat-label">Total de Produtos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="low-stock">0</div>
+                <div class="stat-label">Estoque Baixo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-value">R$ 0</div>
+                <div class="stat-label">Valor Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="categories">0</div>
+                <div class="stat-label">Categorias</div>
+            </div>
+        </div>
+
+        <!-- Layout Principal -->
+        <div class="products-layout">
+            <!-- Formulário de Cadastro -->
+            <div class="product-form-card">
+                <div class="form-header">
+                    <div class="form-icon">📝</div>
+                    <h2 class="form-title">Cadastrar Produto</h2>
+                </div>
+
+                <form id="product-form" onsubmit="saveProduct(event)">
+                    <div class="form-group">
+                        <label for="product-name">Nome do Produto</label>
+                        <input 
+                            type="text" 
+                            id="product-name" 
+                            required
+                            placeholder="Ex: Notebook Dell"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product-code">Código</label>
+                        <input 
+                            type="text" 
+                            id="product-code" 
+                            required
+                            placeholder="Ex: NB001"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product-category">Categoria</label>
+                        <select id="product-category" required>
+                            <option value="">Selecione...</option>
+                            <option value="eletronicos">Eletrônicos</option>
+                            <option value="vestuario">Vestuário</option>
+                            <option value="alimentos">Alimentos</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-stock">Estoque Atual</label>
+                            <input 
+                                type="number" 
+                                id="product-stock" 
+                                min="0" 
+                                required
+                                placeholder="0"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="product-min-stock">Estoque Mínimo</label>
+                            <input 
+                                type="number" 
+                                id="product-min-stock" 
+                                min="0" 
+                                required
+                                placeholder="5"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="product-price">Preço de Venda</label>
+                        <input 
+                            type="number" 
+                            id="product-price" 
+                            step="0.01" 
+                            min="0" 
+                            required
+                            placeholder="R$ 0,00"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        Cadastrar Produto
+                    </button>
+                </form>
+            </div>
+
+            <!-- Lista de Produtos -->
+            <div class="products-list-card">
+                <div class="list-header">
+                    <h2 class="list-title">Produtos Cadastrados</h2>
+                    <span class="product-count" id="product-count">0 produtos</span>
+                </div>
+
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="product-search" 
+                        placeholder="Buscar por nome ou código..."
+                        onkeyup="searchProducts()"
+                    >
+                </div>
+
+                <div class="table-container">
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Estoque</th>
+                                <th>Preço</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-list">
+                            <!-- Produtos serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">📦</div>
+                    <div class="empty-state-title">Nenhum produto cadastrado</div>
+                    <div class="empty-state-text">Comece adicionando seu primeiro produto usando o formulário ao lado.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqeue_aAKObAABUpG0pP_0hj1qJQecElQ",
+            authDomain: "sistemajb-909c1.firebaseapp.com",
+            databaseURL: "https://sistemajb-909c1-default-rtdb.firebaseio.com",
+            projectId: "sistemajb-909c1",
+            storageBucket: "sistemajb-909c1.firebasestorage.app",
+            messagingSenderId: "74845488953",
+            appId: "1:74845488953:web:2b5bf6e044ea4bf014cae8",
+            measurementId: "G-S304J5H84J"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let products = [];
+        let currentUser = null;
+
+        // Verificar autenticação
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(savedUser);
+            loadProducts();
+        });
+
+        function loadProducts() {
+            database.ref('products').once('value').then(snapshot => {
+                products = snapshot.val() || [];
+                displayProducts();
+                updateStats();
+            });
+        }
+
+        function displayProducts(filteredProducts = null) {
+            const tbody = document.getElementById('products-list');
+            const emptyState = document.getElementById('empty-state');
+            const productsToDisplay = filteredProducts || products;
+            
+            if (productsToDisplay.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            tbody.innerHTML = '';
+            
+            productsToDisplay.forEach((product, index) => {
+                const originalIndex = products.indexOf(product);
+                const stockStatus = getStockStatus(product.stock, product.minStock);
+                
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><span class="product-code">${product.code}</span></td>
+                    <td><span class="product-name">${product.name}</span></td>
+                    <td><span class="category-badge category-${product.category}">${getCategoryName(product.category)}</span></td>
+                    <td><span class="stock-indicator stock-${stockStatus}">${product.stock} ${getStockIcon(stockStatus)}</span></td>
+                    <td><span class="price-display">R$ ${parseFloat(product.price).toFixed(2)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editProduct(${originalIndex})">✏️ Editar</button>
+                            <button class="btn-delete" onclick="deleteProduct(${originalIndex})">🗑️ Excluir</button>
+                        </div>
+                    </td>
+                `;
+            });
+            
+            document.getElementById('product-count').textContent = `${productsToDisplay.length} produto${productsToDisplay.length !== 1 ? 's' : ''}`;
+        }
+
+        function saveProduct(event) {
+            event.preventDefault();
+            
+            const product = {
+                code: document.getElementById('product-code').value,
+                name: document.getElementById('product-name').value,
+                category: document.getElementById('product-category').value,
+                stock: parseInt(document.getElementById('product-stock').value),
+                minStock: parseInt(document.getElementById('product-min-stock').value),
+                price: parseFloat(document.getElementById('product-price').value),
+                createdAt: new Date().toISOString(),
+                createdBy: currentUser.name
+            };
+            
+            products.push(product);
+            saveToFirebase();
+            
+            // Limpar formulário
+            document.getElementById('product-form').reset();
+            
+            // Atualizar display
+            displayProducts();
+            updateStats();
+            
+            showNotification('Produto cadastrado com sucesso!');
+        }
+
+        function editProduct(index) {
+            const product = products[index];
+            
+            // Preencher formulário
+            document.getElementById('product-code').value = product.code;
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-category').value = product.category;
+            document.getElementById('product-stock').value = product.stock;
+            document.getElementById('product-min-stock').value = product.minStock;
+            document.getElementById('product-price').value = product.price;
+            
+            // Remover produto antigo
+            products.splice(index, 1);
+            saveToFirebase();
+            displayProducts();
+            updateStats();
+            
+            // Scroll para o formulário
+            document.querySelector('.product-form-card').scrollIntoView({ behavior: 'smooth' });
+            
+            showNotification('Produto carregado para edição');
+        }
+
+        function deleteProduct(index) {
+            if (confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+                const productName = products[index].name;
+                products.splice(index, 1);
+                saveToFirebase();
+                displayProducts();
+                updateStats();
+                showNotification(`Produto "${productName}" excluído com sucesso!`);
+            }
+        }
+
+        function searchProducts() {
+            const searchTerm = document.getElementById('product-search').value.toLowerCase();
+            
+            if (searchTerm === '') {
+                displayProducts();
+                return;
+            }
+            
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                product.code.toLowerCase().includes(searchTerm)
+            );
+            
+            displayProducts(filteredProducts);
+        }
+
+        function updateStats() {
+            // Total de produtos
+            document.getElementById('total-products').textContent = products.length;
+            
+            // Produtos com estoque baixo
+            const lowStockProducts = products.filter(p => p.stock <= p.minStock);
+            document.getElementById('low-stock').textContent = lowStockProducts.length;
+            
+            // Valor total do estoque
+            const totalValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+            document.getElementById('total-value').textContent = formatCurrency(totalValue);
+            
+            // Categorias únicas
+            const categories = [...new Set(products.map(p => p.category))];
+            document.getElementById('categories').textContent = categories.length;
+        }
+
+        function getStockStatus(stock, minStock) {
+            if (stock <= minStock) return 'low';
+            if (stock <= minStock * 2) return 'medium';
+            return 'high';
+        }
+
+        function getStockIcon(status) {
+            switch(status) {
+                case 'low': return '⚠️';
+                case 'medium': return '⚡';
+                default: return '✅';
+            }
+        }
+
+        function getCategoryName(category) {
+            const categories = {
+                'eletronicos': 'Eletrônicos',
+                'vestuario': 'Vestuário',
+                'alimentos': 'Alimentos',
+                'outros': 'Outros'
+            };
+            return categories[category] || category;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function saveToFirebase() {
+            database.ref('products').set(products);
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(39, 174, 96, 0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Adicionar animações CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

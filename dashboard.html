@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Gestão Empresarial</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .dashboard-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .dashboard-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 24px;
+        }
+
+        .user-info-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .user-role {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+        }
+
+        .metric-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .metric-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .metric-change.positive {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+        }
+
+        .metric-change.negative {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .quick-actions {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            margin-bottom: 32px;
+        }
+
+        .quick-actions h3 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .quick-action-btn {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quick-action-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-action-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .quick-action-label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .recent-activity {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .recent-activity h3 {
+            color: #2c3e50;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .activity-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item:hover {
+            background: #f8f9fa;
+            margin: 0 -16px;
+            padding-left: 16px;
+            padding-right: 16px;
+            border-radius: 8px;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .activity-time {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+
+        .activity-amount {
+            color: #27ae60;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .logout-btn:hover {
+            background: rgba(192, 57, 43, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(231, 76, 60, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-title {
+                font-size: 24px;
+            }
+
+            .metric-value {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="logout-btn" onclick="logout()">🚪 Sair</button>
+
+    <div class="container">
+        <!-- Header do Dashboard -->
+        <div class="dashboard-header">
+            <div class="dashboard-content">
+                <h1 class="dashboard-title">📊 Dashboard</h1>
+                <p class="dashboard-subtitle">Visão geral do seu negócio</p>
+                
+                <div class="user-info-card">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <div class="user-name" id="user-name">Juan</div>
+                        <div class="user-role">Administrador</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Principais -->
+        <div class="dashboard-grid">
+            <div class="metric-card">
+                <div class="metric-icon">📦</div>
+                <div class="metric-value" id="total-products">0</div>
+                <div class="metric-label">Produtos Cadastrados</div>
+                <div class="metric-change positive">
+                    <span>↑</span> 12% este mês
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">👥</div>
+                <div class="metric-value" id="total-clients">0</div>
+                <div class="metric-label">Clientes Ativos</div>
+                <div class="metric-change positive">
+                    <span>↑</span> 8% este mês
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🏭</div>
+                <div class="metric-value" id="total-suppliers">0</div>
+                <div class="metric-label">Fornecedores</div>
+                <div class="metric-change positive">
+                    <span>↑</span> 3 novos
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">💰</div>
+                <div class="metric-value" id="total-purchases">0</div>
+                <div class="metric-label">Compras Registradas</div>
+                <div class="metric-change negative">
+                    <span>↓</span> 5% este mês
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Financeiras -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="total-cost">R$ 0,00</div>
+                <div class="stat-label">Custo Total do Estoque</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value" id="avg-cost">R$ 0,00</div>
+                <div class="stat-label">Custo Médio por Produto</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value" id="total-stock">0</div>
+                <div class="stat-label">Itens em Estoque</div>
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="quick-actions">
+            <h3>⚡ Ações Rápidas</h3>
+            <div class="quick-actions-grid">
+                <a href="products.html" class="quick-action-btn">
+                    <div class="quick-action-icon">📦</div>
+                    <div class="quick-action-label">Novo Produto</div>
+                </a>
+                <a href="clients.html" class="quick-action-btn">
+                    <div class="quick-action-icon">👤</div>
+                    <div class="quick-action-label">Novo Cliente</div>
+                </a>
+                <a href="suppliers.html" class="quick-action-btn">
+                    <div class="quick-action-icon">🏭</div>
+                    <div class="quick-action-label">Novo Fornecedor</div>
+                </a>
+                <a href="purchases.html" class="quick-action-btn">
+                    <div class="quick-action-icon">💳</div>
+                    <div class="quick-action-label">Registrar Compra</div>
+                </a>
+                <a href="costs.html" class="quick-action-btn">
+                    <div class="quick-action-icon">📈</div>
+                    <div class="quick-action-label">Ver Custos</div>
+                </a>
+                <a href="pricing.html" class="quick-action-btn">
+                    <div class="quick-action-icon">💵</div>
+                    <div class="quick-action-label">Atualizar Preços</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Atividade Recente -->
+        <div class="recent-activity">
+            <h3>📋 Atividade Recente</h3>
+            <ul class="activity-list" id="activity-list">
+                <li class="activity-item">
+                    <div class="activity-icon">📦</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Novo produto cadastrado</div>
+                        <div class="activity-time">Há 2 minutos</div>
+                    </div>
+                    <div class="activity-amount">+1</div>
+                </li>
+                <li class="activity-item">
+                    <div class="activity-icon">💰</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Compra registrada</div>
+                        <div class="activity-time">Há 15 minutos</div>
+                    </div>
+                    <div class="activity-amount">R$ 450,00</div>
+                </li>
+                <li class="activity-item">
+                    <div class="activity-icon">👥</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Novo cliente adicionado</div>
+                        <div class="activity-time">Há 1 hora</div>
+                    </div>
+                    <div class="activity-amount">+1</div>
+                </li>
+                <li class="activity-item">
+                    <div class="activity-icon">🏭</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Fornecedor atualizado</div>
+                        <div class="activity-time">Há 3 horas</div>
+                    </div>
+                    <div class="activity-amount">✏️</div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqeue_aAKObAABUpG0pP_0hj1qJQecElQ",
+            authDomain: "sistemajb-909c1.firebaseapp.com",
+            databaseURL: "https://sistemajb-909c1-default-rtdb.firebaseio.com",
+            projectId: "sistemajb-909c1",
+            storageBucket: "sistemajb-909c1.firebasestorage.app",
+            messagingSenderId: "74845488953",
+            appId: "1:74845488953:web:2b5bf6e044ea4bf014cae8",
+            measurementId: "G-S304J5H84J"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let products = [];
+        let clients = [];
+        let suppliers = [];
+        let purchases = [];
+        let currentUser = null;
+
+        // Verificar autenticação
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('user-name').textContent = currentUser.name;
+            
+            loadData();
+        });
+
+        function loadData() {
+            // Carregar dados do Firebase
+            Promise.all([
+                database.ref('products').once('value'),
+                database.ref('clients').once('value'),
+                database.ref('suppliers').once('value'),
+                database.ref('purchases').once('value')
+            ]).then(([productsSnapshot, clientsSnapshot, suppliersSnapshot, purchasesSnapshot]) => {
+                products = productsSnapshot.val() || [];
+                clients = clientsSnapshot.val() || [];
+                suppliers = suppliersSnapshot.val() || [];
+                purchases = purchasesSnapshot.val() || [];
+                
+                updateDashboard();
+                loadRecentActivity();
+            });
+        }
+
+        function updateDashboard() {
+            // Atualizar métricas principais
+            document.getElementById('total-products').textContent = products.length;
+            document.getElementById('total-clients').textContent = clients.length;
+            document.getElementById('total-suppliers').textContent = suppliers.length;
+            document.getElementById('total-purchases').textContent = purchases.length;
+            
+            // Calcular estatísticas financeiras
+            let totalCost = 0;
+            let totalStock = 0;
+            
+            products.forEach(product => {
+                const productPurchases = purchases.filter(p => p.product === product.name);
+                if (productPurchases.length > 0) {
+                    const totalQuantity = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
+                    const totalValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+                    const averageCost = totalValue / totalQuantity;
+                    totalCost += averageCost * product.stock;
+                }
+                totalStock += product.stock;
+            });
+            
+            const avgCost = products.length > 0 ? totalCost / products.length : 0;
+            
+            document.getElementById('total-cost').textContent = formatCurrency(totalCost);
+            document.getElementById('avg-cost').textContent = formatCurrency(avgCost);
+            document.getElementById('total-stock').textContent = totalStock;
+        }
+
+        function loadRecentActivity() {
+            const activityList = document.getElementById('activity-list');
+            activityList.innerHTML = '';
+            
+            // Simular atividades recentes (em um sistema real, viria do Firebase)
+            const activities = [
+                { icon: '📦', title: 'Novo produto cadastrado', time: 'Há 2 minutos', amount: '+1' },
+                { icon: '💰', title: 'Compra registrada', time: 'Há 15 minutos', amount: 'R$ 450,00' },
+                { icon: '👥', title: 'Novo cliente adicionado', time: 'Há 1 hora', amount: '+1' },
+                { icon: '🏭', title: 'Fornecedor atualizado', time: 'Há 3 horas', amount: '✏️' }
+            ];
+            
+            activities.forEach(activity => {
+                const li = document.createElement('li');
+                li.className = 'activity-item';
+                li.innerHTML = `
+                    <div class="activity-icon">${activity.icon}</div>
+                    <div class="activity-content">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-time">${activity.time}</div>
+                    </div>
+                    <div class="activity-amount">${activity.amount}</div>
+                `;
+                activityList.appendChild(li);
+            });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair do sistema?')) {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Atualizar dashboard a cada 30 segundos
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
