@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Firebase</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .info { background: #e3f2fd; color: #1565c0; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Diagnóstico Firebase</h1>
+    <div id="logs"></div>
+    
+    <button onclick="testConnection()">Testar Conexão</button>
+    <button onclick="testWrite()">Testar Escrita</button>
+    <button onclick="testRead()">Testar Leitura</button>
+    <button onclick="clearLogs()">Limpar Logs</button>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqeue_aAKObAABUpG0pP_0hj1qJQecElQ",
+            authDomain: "sistemajb-909c1.firebaseapp.com",
+            databaseURL: "https://sistemajb-909c1-default-rtdb.firebaseio.com",
+            projectId: "sistemajb-909c1",
+            storageBucket: "sistemajb-909c1.firebasestorage.app",
+            messagingSenderId: "74845488953",
+            appId: "1:74845488953:web:2b5bf6e044ea4bf014cae8",
+            measurementId: "G-S304J5H84J"
+        };
+
+        let database;
+        let logs = document.getElementById('logs');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logs.innerHTML = '';
+        }
+
+        function testConnection() {
+            try {
+                log('Iniciando teste de conexão...', 'info');
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    log('Firebase inicializado com sucesso', 'success');
+                } else {
+                    log('Firebase já estava inicializado', 'info');
+                }
+                
+                database = firebase.database();
+                log('Database referência criada', 'success');
+                
+                // Testar conexão básica
+                const connectedRef = database.ref('.info/connected');
+                connectedRef.on('value', (snapshot) => {
+                    const connected = snapshot.val();
+                    if (connected) {
+                        log('Conectado ao Firebase!', 'success');
+                        log('URL do Database: ' + firebaseConfig.databaseURL, 'info');
+                        log('Projeto: ' + firebaseConfig.projectId, 'info');
+                        log('Domínio atual: ' + window.location.origin, 'info');
+                    } else {
+                        log('Desconectado do Firebase', 'error');
+                    }
+                });
+                
+            } catch (error) {
+                log('Erro ao inicializar Firebase: ' + error.message, 'error');
+                log('Erro completo: ' + JSON.stringify(error), 'error');
+            }
+        }
+
+        function testWrite() {
+            if (!database) {
+                log('Execute o teste de conexão primeiro', 'error');
+                return;
+            }
+
+            log('Testando escrita no Firebase...', 'info');
+            
+            const testData = {
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                message: 'Teste de escrita',
+                domain: window.location.origin,
+                userAgent: navigator.userAgent
+            };
+
+            database.ref('debug/test').set(testData)
+                .then(() => {
+                    log('Escrita bem-sucedida!', 'success');
+                    log('Dados escritos: ' + JSON.stringify(testData), 'info');
+                })
+                .catch((error) => {
+                    log('Erro de escrita: ' + error.message, 'error');
+                    log('Código do erro: ' + error.code, 'error');
+                    
+                    if (error.code === 'PERMISSION_DENIED') {
+                        log('PERMISSION_DENIED: As regras do Firebase não permitem escrita', 'error');
+                        log('Verifique as regras no Firebase Console', 'error');
+                        log('URL das regras: https://console.firebase.google.com/project/' + firebaseConfig.projectId + '/database/sistemajb-909c1-default-rtdb/rules', 'info');
+                    }
+                });
+        }
+
+        function testRead() {
+            if (!database) {
+                log('Execute o teste de conexão primeiro', 'error');
+                return;
+            }
+
+            log('Testando leitura do Firebase...', 'info');
+            
+            database.ref('debug/test').once('value')
+                .then((snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        log('Leitura bem-sucedida!', 'success');
+                        log('Dados lidos: ' + JSON.stringify(data), 'info');
+                    } else {
+                        log('Nenhum dado encontrado em debug/test', 'info');
+                    }
+                })
+                .catch((error) => {
+                    log('Erro de leitura: ' + error.message, 'error');
+                    log('Código do erro: ' + error.code, 'error');
+                    
+                    if (error.code === 'PERMISSION_DENIED') {
+                        log('PERMISSION_DENIED: As regras do Firebase não permitem leitura', 'error');
+                    }
+                });
+        }
+
+        // Auto-iniciar teste de conexão
+        window.addEventListener('load', () => {
+            log('Página carregada. Iniciando diagnóstico...', 'info');
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>
