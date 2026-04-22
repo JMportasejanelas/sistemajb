@@ -724,20 +724,25 @@
                 minStock: parseInt(document.getElementById('product-min-stock').value),
                 price: parseFloat(document.getElementById('product-price').value),
                 createdAt: new Date().toISOString(),
-                createdBy: currentUser.name
+                createdBy: 'Sistema'
             };
             
             products.push(product);
-            saveToFirebase();
             
-            // Limpar formulário
-            document.getElementById('product-form').reset();
-            
-            // Atualizar display
-            displayProducts();
-            updateStats();
-            
-            showNotification('Produto cadastrado com sucesso!');
+            saveToFirebase().then(() => {
+                // Limpar formulário
+                document.getElementById('product-form').reset();
+                
+                // Atualizar display
+                displayProducts();
+                updateStats();
+                
+                showNotification('Produto cadastrado com sucesso!');
+                console.log('Produto salvo:', product);
+            }).catch((error) => {
+                console.error('Erro ao salvar produto:', error);
+                showFirebaseError(error);
+            });
         }
 
         function editProduct(index) {
@@ -839,7 +844,14 @@
         }
 
         function saveToFirebase() {
-            database.ref('products').set(products);
+            return database.ref('products').set(products)
+                .then(() => {
+                    console.log('Dados salvos com sucesso no Firebase');
+                })
+                .catch((error) => {
+                    console.error('Erro ao salvar no Firebase:', error);
+                    throw error;
+                });
         }
 
         function showNotification(message) {
@@ -864,6 +876,35 @@
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
+        }
+
+        function showFirebaseError(error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+                z-index: 10000;
+                max-width: 400px;
+                font-size: 14px;
+            `;
+            errorDiv.innerHTML = `
+                <strong>Erro de Conexão Firebase:</strong><br>
+                ${error.message}<br><br>
+                <small>Verifique as regras do Firebase Console.</small>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 10000);
         }
 
         // Adicionar animações CSS

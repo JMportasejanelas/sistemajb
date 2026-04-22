@@ -375,7 +375,60 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Sistema pronto para uso sem necessidade de login
             console.log('Sistema de Gestão Empresarial inicializado');
+            
+            // Testar conexão com Firebase
+            testFirebaseConnection();
         });
+
+        function testFirebaseConnection() {
+            const testRef = database.ref('.info/connected');
+            testRef.on('value', (snapshot) => {
+                const connected = snapshot.val();
+                console.log('Conectado ao Firebase:', connected);
+                
+                if (connected) {
+                    // Testar escrita no banco
+                    database.ref('test/connection').set({
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                        status: 'connected'
+                    }).then(() => {
+                        console.log('Teste de escrita no Firebase bem-sucedido');
+                    }).catch((error) => {
+                        console.error('Erro de escrita no Firebase:', error);
+                        showFirebaseError(error);
+                    });
+                }
+            });
+        }
+
+        function showFirebaseError(error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+                z-index: 10000;
+                max-width: 400px;
+                font-size: 14px;
+            `;
+            errorDiv.innerHTML = `
+                <strong>Erro de Conexão Firebase:</strong><br>
+                ${error.message}<br><br>
+                <small>Verifique as regras do Firebase Console.</small>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 10000);
+        }
 
         // Adicionar efeitos de hover nos cards
         document.querySelectorAll('.module-card').forEach(card => {
